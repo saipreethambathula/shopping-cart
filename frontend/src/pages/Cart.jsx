@@ -1,8 +1,7 @@
+// src/pages/Cart.jsx
 import React, { useEffect, useState } from "react";
 import { ShoppingCart, LogOut, CheckCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-
-const baseURL = import.meta.env.VITE_API_URL;
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
@@ -22,14 +21,16 @@ const Cart = () => {
     fetchCart();
   }, [token]);
 
+  // Fetch cart and items
   const fetchCart = async () => {
     try {
-      const cartRes = await fetch(`${baseURL}/carts`, {
+      const cartRes = await fetch("http://localhost:3000/carts", {
         headers: { Authorization: token },
       });
       if (!cartRes.ok) throw new Error("Failed to fetch cart");
       const cartData = await cartRes.json();
 
+      // Combine duplicate items
       const combined = {};
       cartData.forEach((c) => {
         if (combined[c.item_id]) {
@@ -41,13 +42,15 @@ const Cart = () => {
       });
       setCartItems(Object.values(combined));
 
+      // Update cart count
       const count = Object.values(combined).reduce(
         (acc, item) => acc + item.quantity,
         0,
       );
       setCartCount(count);
 
-      const itemsRes = await fetch(`${baseURL}/items`);
+      // Fetch all items
+      const itemsRes = await fetch("http://localhost:3000/items");
       if (!itemsRes.ok) throw new Error("Failed to fetch items");
       const itemsData = await itemsRes.json();
       const map = {};
@@ -65,7 +68,7 @@ const Cart = () => {
 
   const handleLogout = async () => {
     try {
-      const res = await fetch(`${baseURL}/users/logout`, {
+      const res = await fetch("http://localhost:3000/users/logout", {
         method: "POST",
         headers: { Authorization: token },
       });
@@ -77,9 +80,10 @@ const Cart = () => {
     }
   };
 
+  // Place order
   const handlePlaceOrder = async () => {
     try {
-      const res = await fetch(`${baseURL}/orders`, {
+      const res = await fetch("http://localhost:3000/orders", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -96,12 +100,17 @@ const Cart = () => {
     }
   };
 
+  // Calculate total price
+  const totalPrice = cartItems.reduce((acc, item) => acc + item.item_price, 0);
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Navbar */}
       <nav className="bg-white shadow-md py-4 px-6 flex justify-between items-center sticky top-0 z-50">
         <Link to="/home" className="text-xl font-bold">
           Shopping Cart
         </Link>
+
         <div className="flex items-center gap-4">
           <button
             onClick={handleLogout}
@@ -120,6 +129,7 @@ const Cart = () => {
         </div>
       </nav>
 
+      {/* Main */}
       <main className="p-6">
         {loading ? (
           <p className="text-center mt-10">Loading cart items...</p>
@@ -144,7 +154,7 @@ const Cart = () => {
                     <div className="flex-1">
                       <h2 className="font-semibold text-lg">{item.name}</h2>
                       <p className="text-gray-500 mt-1">
-                        Price: ${cart.item_price}
+                        Price: ${cart.item_price.toFixed(2)}
                       </p>
                       <p className="text-gray-500 mt-1">
                         Quantity: {cart.quantity}
@@ -155,7 +165,13 @@ const Cart = () => {
               })}
             </div>
 
-            <div className="mt-8 text-center">
+            {/* Total Price */}
+            <div className="mt-8 text-center font-bold text-lg">
+              Total Price: ${totalPrice.toFixed(2)}
+            </div>
+
+            {/* Place Order Button */}
+            <div className="mt-4 text-center">
               <button
                 onClick={handlePlaceOrder}
                 className="flex items-center justify-center gap-2 mx-auto bg-black text-white px-6 py-3 rounded-full hover:bg-gray-800 transition font-semibold"
@@ -167,6 +183,7 @@ const Cart = () => {
         )}
       </main>
 
+      {/* Order confirmation modal */}
       {showOrderModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
           <div className="bg-white rounded-2xl p-8 flex flex-col items-center gap-4 shadow-lg">
