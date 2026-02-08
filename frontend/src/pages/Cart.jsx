@@ -1,7 +1,8 @@
-// src/pages/Cart.jsx
 import React, { useEffect, useState } from "react";
 import { ShoppingCart, LogOut, CheckCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+
+const baseURL = import.meta.env.VITE_API_URL;
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
@@ -24,13 +25,12 @@ const Cart = () => {
   // Fetch cart and items
   const fetchCart = async () => {
     try {
-      const cartRes = await fetch("http://localhost:3000/carts", {
+      const cartRes = await fetch(`${baseURL}/carts`, {
         headers: { Authorization: token },
       });
       if (!cartRes.ok) throw new Error("Failed to fetch cart");
       const cartData = await cartRes.json();
 
-      // Combine duplicate items
       const combined = {};
       cartData.forEach((c) => {
         if (combined[c.item_id]) {
@@ -42,15 +42,13 @@ const Cart = () => {
       });
       setCartItems(Object.values(combined));
 
-      // Update cart count
       const count = Object.values(combined).reduce(
         (acc, item) => acc + item.quantity,
         0,
       );
       setCartCount(count);
 
-      // Fetch all items
-      const itemsRes = await fetch("http://localhost:3000/items");
+      const itemsRes = await fetch(`${baseURL}/items`);
       if (!itemsRes.ok) throw new Error("Failed to fetch items");
       const itemsData = await itemsRes.json();
       const map = {};
@@ -68,7 +66,7 @@ const Cart = () => {
 
   const handleLogout = async () => {
     try {
-      const res = await fetch("http://localhost:3000/users/logout", {
+      const res = await fetch(`${baseURL}/users/logout`, {
         method: "POST",
         headers: { Authorization: token },
       });
@@ -80,10 +78,9 @@ const Cart = () => {
     }
   };
 
-  // Place order
   const handlePlaceOrder = async () => {
     try {
-      const res = await fetch("http://localhost:3000/orders", {
+      const res = await fetch(`${baseURL}/orders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -100,7 +97,7 @@ const Cart = () => {
     }
   };
 
-  // Calculate total price
+  // Total price calculation
   const totalPrice = cartItems.reduce((acc, item) => acc + item.item_price, 0);
 
   return (
@@ -110,7 +107,6 @@ const Cart = () => {
         <Link to="/home" className="text-xl font-bold">
           Shopping Cart
         </Link>
-
         <div className="flex items-center gap-4">
           <button
             onClick={handleLogout}
@@ -166,7 +162,7 @@ const Cart = () => {
             </div>
 
             {/* Total Price */}
-            <div className="mt-8 text-center font-bold text-lg">
+            <div className="mt-6 text-center font-bold text-lg">
               Total Price: ${totalPrice.toFixed(2)}
             </div>
 
